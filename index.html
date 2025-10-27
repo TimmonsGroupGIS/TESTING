@@ -41,8 +41,8 @@
             background: #006634;
             color: white;
             font-weight: bold;
-            padding: 4px 4px;
-            font-size: 20px;
+            padding: 12px 15px;
+            font-size: 16px;
             flex-shrink: 0;
             display: flex;
             align-items: center;
@@ -315,7 +315,7 @@
     <script>
         const TOKEN = 'MLY|24840280672250420|6fc0e204403850a11ccc043866f1b01d';
         const START_ID = '1347465910083369';
-        const USERNAME = 'vukmercd23';
+        const ORGANIZATION_KEY = '1286328258619804';
         const START_DATE = '2025-10-01T00:00:00Z';
         const END_DATE = '2025-10-16T00:00:00Z';
         
@@ -373,8 +373,8 @@
                 while (true) {
                     const url = new URL('https://graph.mapillary.com/images');
                     url.searchParams.set('access_token', TOKEN);
-                    url.searchParams.set('fields', 'id,geometry,sequence,captured_at,creator_username,is_pano');
-                    url.searchParams.set('creator_username', USERNAME);
+                    url.searchParams.set('fields', 'id,geometry,sequence,captured_at,is_pano,organization_id');
+                    url.searchParams.set('organization_id', ORGANIZATION_KEY);
                     url.searchParams.set('limit', 2000);
                     if (after) url.searchParams.set('after', after);
                     
@@ -389,19 +389,19 @@
                     const images = data.data || [];
                     console.log(`Got ${images.length} images`);
                     
-                    // Debug: Log unique usernames in the response
-                    const usernames = new Set(images.map(img => img.creator_username).filter(Boolean));
-                    if (usernames.size > 0) {
-                        console.log('Usernames in response:', Array.from(usernames));
+                    // Debug: Log unique organization IDs in the response
+                    const orgIds = new Set(images.map(img => img.organization_id).filter(Boolean));
+                    if (orgIds.size > 0) {
+                        console.log('Organization IDs in response:', Array.from(orgIds));
                     }
                     
                     if (images.length === 0) break;
                     
                     const filtered = images.filter(img => {
                         if (!img.captured_at) return false;
-                        // Explicitly check username matches
-                        if (img.creator_username && img.creator_username !== USERNAME) {
-                            console.log(`Filtering out image from user: ${img.creator_username}`);
+                        // Explicitly check organization matches
+                        if (img.organization_id && img.organization_id !== ORGANIZATION_KEY) {
+                            console.log(`Filtering out image from organization: ${img.organization_id}`);
                             return false;
                         }
                         // Filter for 360 images only

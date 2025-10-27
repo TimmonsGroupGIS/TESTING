@@ -22,91 +22,30 @@
         html, body {
             height: 100%;
             font-family: Arial, sans-serif;
-            overflow: hidden;
         }
         #container {
             display: flex;
             width: 100vw;
             height: 100vh;
-            overflow: hidden;
         }
         #viewer {
-            width: 40%;
+            width: 50%;
             height: 100%;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-        #viewer-title {
-            background: #006634;
-            color: white;
-            font-weight: bold;
-            padding: 4px 4px;
-            font-size: 20px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 12px;
-        }
-        #viewer-title img {
-            height: 48px;
-            width: auto;
-        }
-        #viewer-content {
-            flex: 1;
             position: relative;
         }
         #mini-map {
             position: absolute;
-            bottom: 80px;
+            bottom: 60px;
             right: 10px;
-            width: 250px;
-            height: 150px;
+            width: 300px;
+            height: 200px;
             border: 3px solid white;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             z-index: 1000;
-            transition: all 0.3s ease;
-        }
-        #mini-map.expanded {
-            width: 600px;
-            height: 450px;
-            bottom: 50%;
-            right: 50%;
-            transform: translate(50%, 50%);
-            z-index: 2000;
-        }
-        #mini-map-container {
-            width: 100%;
-            height: 100%;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-        #expand-minimap-btn {
-            position: absolute;
-            bottom: 5px;
-            left: 5px;
-            background: rgba(100, 100, 100, 0.8);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            z-index: 1001;
-            transition: background 0.2s;
-        }
-        #expand-minimap-btn:hover {
-            background: rgba(80, 80, 80, 0.9);
         }
         #arcgis-container {
-            width: 60%;
+            width: 50%;
             height: 100%;
             position: relative;
         }
@@ -143,8 +82,8 @@
         }
         #sync-btn {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
+            top: 10px;
+            right: 10px;
             background: #4285F4;
             color: white;
             font-weight: bold;
@@ -162,8 +101,8 @@
         }
         #edit-btn {
             position: absolute;
-            bottom: 58px;
-            left: 10px;
+            top: 58px;
+            right: 10px;
             background: #9C27B0;
             color: white;
             font-weight: bold;
@@ -181,8 +120,8 @@
         }
         #toggle-fov-btn {
             position: absolute;
-            bottom: 106px;
-            left: 10px;
+            top: 106px;
+            right: 10px;
             background: #FF9800;
             color: white;
             font-weight: bold;
@@ -214,8 +153,8 @@
         }
         #mini-map-loading {
             position: absolute;
-            top: -30px;
-            right: 0px;
+            bottom: 130px;
+            right: 20px;
             background: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 8px 12px;
@@ -229,22 +168,23 @@
         }
         #reload-minimap-btn {
             position: absolute;
-            bottom: -40px;
-            left: 0px;
-            background: rgba(100, 100, 100, 0.8);
-            color: white;
+            bottom: 210px;
+            right: 20px;
+            background: #fff;
+            color: #333;
             font-weight: bold;
             padding: 6px 10px;
-            border: none;
+            border: 2px solid #1565C0;
             border-radius: 4px;
             cursor: pointer;
             font-size: 11px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             z-index: 1001;
             transition: all 0.2s;
         }
         #reload-minimap-btn:hover {
-            background: rgba(80, 80, 80, 0.9);
+            background: #1565C0;
+            color: white;
         }
         #mapillary-link-btn {
             position: absolute;
@@ -277,27 +217,18 @@
 <body>
     <div id="container">
         <div id="viewer">
-            <div id="viewer-title">
-                <img src="https://media.licdn.com/dms/image/v2/D4E0BAQFph8QV3f9NJg/company-logo_200_200/B4EZdp0GrqHsA0-/0/1749826956321/timmons_group_logo?e=2147483647&v=beta&t=DartXpUkAR5eb0QHyBDlpKO_yX4vzaD3DIkHRLNzrMM" alt="Timmons Group">
-                <span>Petersburg, VA Pavement/Asset Data Collector</span>
-            </div>
-            <div id="viewer-content">
-                <div id="loading">Loading Mapillary viewer...</div>
-                <div id="mini-map">
-                    <div id="mini-map-container"></div>
-                    <button id="expand-minimap-btn" title="Expand/Collapse Map">⛶</button>
-                    <div id="mini-map-loading">Loading map data...</div>
-                    <button id="reload-minimap-btn" title="Reload image data">🔄 Force API Reload</button>
-                </div>
-                <button id="mapillary-link-btn">
-                    <img src="https://play-lh.googleusercontent.com/z3qzEc13E2sDWky9LgqADojcdy8hrX_szuAAeX21k_dFe7GNXLIYXJtOu5RcE3_5Jz8" alt="Mapillary">
-                    Open in Mapillary Web
-                </button>
-            </div>
+            <div id="loading">Loading Mapillary viewer...</div>
+            <div id="mini-map"></div>
+            <div id="mini-map-loading">Loading map data...</div>
+            <button id="reload-minimap-btn" title="Reload image data">🔄 Reload</button>
+            <button id="mapillary-link-btn">
+                <img src="https://play-lh.googleusercontent.com/z3qzEc13E2sDWky9LgqADojcdy8hrX_szuAAeX21k_dFe7GNXLIYXJtOu5RcE3_5Jz8" alt="Mapillary">
+                Open in Mapillary Web
+            </button>
         </div>
         
         <div id="arcgis-container">
-            <iframe id="arcgis-map" src="https://timmons-group.maps.arcgis.com/apps/mapviewer/index.html?webmap=9f2145c8c3674b9d864dd7e0d3477cf3"></iframe>
+            <iframe id="arcgis-map" src="https://timmons-group.maps.arcgis.com/apps/mapviewer/index.html?webmap=0de90d7988f9470da59918c9b00c5379"></iframe>
             <div id="arcgis-overlay">
                 <div id="crosshair-container">
                     <svg id="crosshair-svg" viewBox="0 0 100 100">
@@ -325,7 +256,7 @@
 
         // Initialize Mapillary Viewer
         const viewer = new mapillary.Viewer({
-            container: 'viewer-content',
+            container: 'viewer',
             accessToken: TOKEN,
             imageId: START_ID,
             component: {
@@ -338,7 +269,7 @@
 
         // Initialize mini map
         const miniMap = new maplibregl.Map({
-            container: 'mini-map-container',
+            container: 'mini-map',
             style: {
                 version: 8,
                 sources: {
@@ -373,7 +304,7 @@
                 while (true) {
                     const url = new URL('https://graph.mapillary.com/images');
                     url.searchParams.set('access_token', TOKEN);
-                    url.searchParams.set('fields', 'id,geometry,sequence,captured_at,is_pano,creator_username');
+                    url.searchParams.set('fields', 'id,geometry,sequence,captured_at,is_pano');
                     url.searchParams.set('creator_username', USERNAME);
                     url.searchParams.set('limit', 2000);
                     if (after) url.searchParams.set('after', after);
@@ -389,26 +320,14 @@
                     const images = data.data || [];
                     console.log(`Got ${images.length} images`);
                     
-                    // Debug: Log unique usernames in the response
-                    const usernames = new Set(images.map(img => img.creator_username).filter(Boolean));
-                    if (usernames.size > 0) {
-                        console.log('Usernames in response:', Array.from(usernames));
-                    }
-                    
                     if (images.length === 0) break;
                     
                     const filtered = images.filter(img => {
                         if (!img.captured_at) return false;
-                        // Explicitly check username matches
-                        if (img.creator_username && img.creator_username !== USERNAME) {
-                            console.log(`Filtering out image from user: ${img.creator_username}`);
-                            return false;
-                        }
                         // Filter for 360 images only
                         if (!img.is_pano) {
                             return false;
                         }
-                        // Date range filter
                         let capturedTime = typeof img.captured_at === 'number' ? 
                             img.captured_at : Date.parse(img.captured_at);
                         return capturedTime >= startTime && capturedTime < endTime;
@@ -686,7 +605,7 @@
                 
                 const iframe = document.getElementById('arcgis-map');
                 const baseUrl = 'https://timmons-group.maps.arcgis.com/apps/mapviewer/index.html';
-                const newUrl = `${baseUrl}?webmap=9f2145c8c3674b9d864dd7e0d3477cf3&center=${pos.lng},${pos.lat}&level=${arcgisZoom}`;
+                const newUrl = `${baseUrl}?webmap=0de90d7988f9470da59918c9b00c5379&center=${pos.lng},${pos.lat}&level=${arcgisZoom}`;
                 iframe.src = newUrl;
                 
                 const btn = document.getElementById('sync-btn');
@@ -709,7 +628,7 @@
                 const arcgisZoom = 18;
                 
                 const baseUrl = 'https://timmons-group.maps.arcgis.com/apps/webeditor/index.html';
-                const editorUrl = `${baseUrl}?webmap=9f2145c8c3674b9d864dd7e0d3477cf3&center=${pos.lng},${pos.lat}&level=${arcgisZoom}`;
+                const editorUrl = `${baseUrl}?webmap=0de90d7988f9470da59918c9b00c5379&center=${pos.lng},${pos.lat}&level=${arcgisZoom}`;
                 window.open(editorUrl, '_blank');
             } catch (err) {
                 console.error('Error opening web editor:', err);
@@ -732,29 +651,6 @@
                 btn.classList.remove('active');
                 btn.textContent = 'Show FOV';
             }
-        });
-
-        // Toggle mini map expansion
-        document.getElementById('expand-minimap-btn').addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent event bubbling
-            const miniMapElement = document.getElementById('mini-map');
-            const expandBtn = document.getElementById('expand-minimap-btn');
-            
-            miniMapElement.classList.toggle('expanded');
-            
-            // Change icon based on state
-            if (miniMapElement.classList.contains('expanded')) {
-                expandBtn.textContent = '⛶'; // Could also use '✕' or '◱'
-                expandBtn.title = 'Collapse Map';
-            } else {
-                expandBtn.textContent = '⛶';
-                expandBtn.title = 'Expand Map';
-            }
-            
-            // Resize the map after transition completes
-            setTimeout(() => {
-                miniMap.resize();
-            }, 300);
         });
 
         fetchUserImages();

@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapillary Viewer with ArcGIS Map</title>
+    
+    <!-- MapillaryJS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mapillary-js@latest/dist/mapillary.css" />
+    <script src="https://cdn.jsdelivr.net/npm/mapillary-js@latest/dist/mapillary.min.js"></script>
+    
+    <!-- MapLibre GL -->
+    <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        #container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #viewer {
+            width: 40%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        #viewer-title {
+            background: #006634;
+            color: white;
+            font-weight: bold;
+            padding: 12px 15px;
+            font-size: 16px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+        }
+        #viewer-title img {
+            height: 48px;
+            width: auto;
+        }
+        #viewer-content {
+            flex: 1;
+            position: relative;
+        }
+        #mini-map {
+            position: absolute;
+            bottom: 80px;
+            right: 10px;
+            width: 250px;
+            height: 150px;
+            border: 3px solid white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        #mini-map.expanded {
+            width: 600px;
+            height: 450px;
+            bottom: 50%;
+            right: 50%;
+            transform: translate(50%, 50%);
+            z-index: 2000;
+        }
+        #mini-map-container {
+            width: 100%;
+            height: 100%;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #expand-minimap-btn {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(100, 100, 100, 0.8);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 1001;
+            transition: background 0.2s;
+        }
+        #expand-minimap-btn:hover {
+            background: rgba(80, 80, 80, 0.9);
+        }
+        #arcgis-container {
+            width: 60%;
+            height: 100%;
+            position: relative;
+        }
+        #arcgis-map {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #arcgis-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+        }
+        #arcgis-overlay.visible {
+            display: block;
+        }
+        #crosshair-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            pointer-events: none;
+        }
+        #crosshair-svg {
+            width: 100%;
+            height: 100%;
+        }
+        #sync-btn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: #4285F4;
+            color: white;
+            font-weight: bold;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1001;
+            transition: background 0.2s;
+        }
+        #sync-btn:hover {
+            background: #3367D6;
+        }
+        #edit-btn {
+            position: absolute;
+            bottom: 58px;
+            left: 10px;
+            background: #9C27B0;
+            color: white;
+            font-weight: bold;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1001;
+            transition: background 0.2s;
+        }
+        #edit-btn:hover {
+            background: #7B1FA2;
+        }
+        #toggle-fov-btn {
+            position: absolute;
+            bottom: 106px;
+            left: 10px;
+            background: #FF9800;
+            color: white;
+            font-weight: bold;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1001;
+            transition: background 0.2s;
+        }
+        #toggle-fov-btn:hover {
+            background: #F57C00;
+        }
+        #toggle-fov-btn.active {
+            background: #F57C00;
+        }
+        #loading {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+            font-size: 13px;
+        }
+        #mini-map-loading {
+            position: absolute;
+            top: -30px;
+            right: 0px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1001;
+            display: none;
+        }
+        #mini-map-loading.visible {
+            display: block;
+        }
+        #reload-minimap-btn {
+            position: absolute;
+            bottom: -40px;
+            left: 0px;
+            background: rgba(100, 100, 100, 0.8);
+            color: white;
+            font-weight: bold;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 1001;
+            transition: all 0.2s;
+        }
+        #reload-minimap-btn:hover {
+            background: rgba(80, 80, 80, 0.9);
+        }
+        #mapillary-link-btn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: #34A853;
+            color: white;
+            font-weight: bold;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #mapillary-link-btn:hover {
+            background: #2D9348;
+        }
+        #mapillary-link-btn img {
+            width: 30px;
+            height: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="viewer">
+            <div id="viewer-title">
+                <img src="https://media.licdn.com/dms/image/v2/D4E0BAQFph8QV3f9NJg/company-logo_200_200/B4EZdp0GrqHsA0-/0/1749826956321/timmons_group_logo?e=2147483647&v=beta&t=DartXpUkAR5eb0QHyBDlpKO_yX4vzaD3DIkHRLNzrMM" alt="Timmons Group">
+                <span>Petersburg, VA Pavement/Asset Data Collector</span>
+            </div>
+            <div id="viewer-content">
+                <div id="loading">Loading Mapillary viewer...</div>
+                <div id="mini-map">
+                    <div id="mini-map-container"></div>
+                    <button id="expand-minimap-btn" title="Expand/Collapse Map">⛶</button>
+                    <div id="mini-map-loading">Loading map data...</div>
+                    <button id="reload-minimap-btn" title="Reload image data">🔄 Force API Reload</button>
+                </div>
+                <button id="mapillary-link-btn">
+                    <img src="https://play-lh.googleusercontent.com/z3qzEc13E2sDWky9LgqADojcdy8hrX_szuAAeX21k_dFe7GNXLIYXJtOu5RcE3_5Jz8" alt="Mapillary">
+                    Open in Mapillary Web
+                </button>
+            </div>
+        </div>
+        
+        <div id="arcgis-container">
+            <iframe id="arcgis-map" src="https://timmons-group.maps.arcgis.com/apps/mapviewer/index.html?webmap=9f2145c8c3674b9d864dd7e0d3477cf3"></iframe>
+            <div id="arcgis-overlay">
+                <div id="crosshair-container">
+                    <svg id="crosshair-svg" viewBox="0 0 100 100">
+                        <path id="fov-wedge-path" d="" fill="#FBBC04" fill-opacity="0.4" stroke="#F57C00" stroke-width="2"/>
+                        <circle cx="50" cy="50" r="6" fill="#EA4335" stroke="white" stroke-width="2"/>
+                    </svg>
+                </div>
+            </div>
+            <button id="sync-btn">📍 Sync to Current Image</button>
+            <button id="edit-btn">✏️ Open Web Editor</button>
+            <button id="toggle-fov-btn">Show FOV</button>
+        </div>
+    </div>
+
+    <script>
+        const TOKEN = 'MLY|24840280672250420|6fc0e204403850a11ccc043866f1b01d';
+        const START_ID = '1347465910083369';
+        const USERNAME = 'vukmercd23';
+        const START_DATE = '2025-10-01T00:00:00Z';
+        const END_DATE = '2025-10-16T00:00:00Z';
+        
+        let imageData = [];
+        let isUpdatingFromMap = false;
+        let fovOverlayVisible = false;
+
+        // Initialize Mapillary Viewer
+        const viewer = new mapillary.Viewer({
+            container: 'viewer-content',
+            accessToken: TOKEN,
+            imageId: START_ID,
+            component: {
+                cover: false,
+                sequence: true,
+                direction: true,
+                zoom: true
+            }
+        });
+
+        // Initialize mini map
+        const miniMap = new maplibregl.Map({
+            container: 'mini-map-container',
+            style: {
+                version: 8,
+                sources: {
+                    osm: {
+                        type: 'raster',
+                        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: '© OpenStreetMap'
+                    }
+                },
+                layers: [
+                    { id: 'osm', type: 'raster', source: 'osm' }
+                ]
+            },
+            center: [-91.95221806850299, 30.138492112426093],
+            zoom: 12
+        });
+
+        // Fetch user images
+        async function fetchUserImages() {
+            const loadingEl = document.getElementById('mini-map-loading');
+            loadingEl.classList.add('visible');
+            
+            try {
+                console.log('Starting to fetch images...');
+                let allImages = [];
+                let after = null;
+                const startTime = Date.parse(START_DATE);
+                const endTime = Date.parse(END_DATE);
+                let requestCount = 0;
+                
+                while (true) {
+                    const url = new URL('https://graph.mapillary.com/images');
+                    url.searchParams.set('access_token', TOKEN);
+                    url.searchParams.set('fields', 'id,geometry,sequence,captured_at,creator_username,is_pano');
+                    url.searchParams.set('creator_username', USERNAME);
+                    url.searchParams.set('limit', 2000);
+                    if (after) url.searchParams.set('after', after);
+                    
+                    console.log(`Request ${++requestCount}...`);
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        console.error(`API Error: ${response.status}`);
+                        break;
+                    }
+                    
+                    const data = await response.json();
+                    const images = data.data || [];
+                    console.log(`Got ${images.length} images`);
+                    
+                    // Debug: Log unique usernames in the response
+                    const usernames = new Set(images.map(img => img.creator_username).filter(Boolean));
+                    if (usernames.size > 0) {
+                        console.log('Usernames in response:', Array.from(usernames));
+                    }
+                    
+                    if (images.length === 0) break;
+                    
+                    const filtered = images.filter(img => {
+                        if (!img.captured_at) return false;
+                        // Explicitly check username matches
+                        if (img.creator_username && img.creator_username !== USERNAME) {
+                            console.log(`Filtering out image from user: ${img.creator_username}`);
+                            return false;
+                        }
+                        // Filter for 360 images only
+                        if (!img.is_pano) {
+                            return false;
+                        }
+                        let capturedTime = typeof img.captured_at === 'number' ? 
+                            img.captured_at : Date.parse(img.captured_at);
+                        return capturedTime >= startTime && capturedTime < endTime;
+                    });
+                    
+                    console.log(`Filtered to ${filtered.length} images in date range`);
+                    allImages = allImages.concat(filtered);
+                    loadingEl.textContent = `Loading: ${allImages.length} images...`;
+                    
+                    if (data.paging?.cursors?.after) {
+                        after = data.paging.cursors.after;
+                    } else {
+                        break;
+                    }
+                    
+                    if (requestCount >= 30 || allImages.length >= 60000) break;
+                }
+                
+                console.log(`Total images loaded: ${allImages.length}`);
+                imageData = allImages;
+                loadingEl.classList.remove('visible');
+                addImagesToMiniMap();
+            } catch (err) {
+                console.error('Error fetching images:', err);
+                loadingEl.textContent = 'Error loading data';
+                setTimeout(() => loadingEl.classList.remove('visible'), 3000);
+            }
+        }
+
+        function addImagesToMiniMap() {
+            console.log(`Adding ${imageData.length} images to mini map`);
+            
+            const features = imageData
+                .filter(img => img.geometry?.coordinates)
+                .map(img => ({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: img.geometry.coordinates },
+                    properties: { id: img.id }
+                }));
+
+            console.log(`Created ${features.length} features for map`);
+
+            const addLayers = () => {
+                if (miniMap.getSource('images')) {
+                    console.log('Updating existing source');
+                    miniMap.getSource('images').setData({ type: 'FeatureCollection', features });
+                } else {
+                    console.log('Adding new source and layers');
+                    miniMap.addSource('images', {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features }
+                    });
+
+                    miniMap.addLayer({
+                        id: 'image-points',
+                        type: 'circle',
+                        source: 'images',
+                        paint: {
+                            'circle-color': '#4285F4',
+                            'circle-radius': 3,
+                            'circle-stroke-width': 1,
+                            'circle-stroke-color': '#1565C0'
+                        }
+                    });
+
+                    miniMap.addSource('current', {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: [] }
+                    });
+
+                    miniMap.addLayer({
+                        id: 'current-point',
+                        type: 'circle',
+                        source: 'current',
+                        paint: {
+                            'circle-color': '#EA4335',
+                            'circle-radius': 6,
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': '#fff'
+                        }
+                    });
+
+                    miniMap.addSource('fov', {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: [] }
+                    });
+
+                    miniMap.addLayer({
+                        id: 'fov-wedge',
+                        type: 'fill',
+                        source: 'fov',
+                        paint: {
+                            'fill-color': '#FBBC04',
+                            'fill-opacity': 0.4
+                        }
+                    });
+
+                    miniMap.addLayer({
+                        id: 'fov-outline',
+                        type: 'line',
+                        source: 'fov',
+                        paint: {
+                            'line-color': '#F57C00',
+                            'line-width': 2
+                        }
+                    });
+
+                    miniMap.on('click', 'image-points', async (e) => {
+                        if (isUpdatingFromMap) return;
+                        const feature = e.features[0];
+                        const imageId = feature.properties.id;
+                        if (imageId) {
+                            isUpdatingFromMap = true;
+                            try {
+                                await viewer.moveTo(String(imageId));
+                            } catch (err) {
+                                console.error('Error moving to image:', err);
+                            }
+                            setTimeout(() => { isUpdatingFromMap = false; }, 300);
+                        }
+                    });
+
+                    miniMap.on('mouseenter', 'image-points', () => {
+                        miniMap.getCanvas().style.cursor = 'pointer';
+                    });
+
+                    miniMap.on('mouseleave', 'image-points', () => {
+                        miniMap.getCanvas().style.cursor = '';
+                    });
+                }
+
+                if (features.length > 0) {
+                    const coords = features.map(f => f.geometry.coordinates);
+                    const bounds = coords.reduce((bounds, coord) => {
+                        return bounds.extend(coord);
+                    }, new maplibregl.LngLatBounds(coords[0], coords[0]));
+                    miniMap.fitBounds(bounds, { padding: 20 });
+                    console.log('Fitted bounds to show all images');
+                }
+            };
+
+            if (miniMap.loaded() || miniMap.isStyleLoaded?.()) {
+                addLayers();
+            } else {
+                miniMap.once('load', addLayers);
+            }
+        }
+
+        async function updateMiniMapPosition() {
+            if (isUpdatingFromMap) return;
+            try {
+                const pos = await viewer.getPosition();
+                const pov = await viewer.getPointOfView();
+                
+                if (miniMap.getSource('current')) {
+                    miniMap.getSource('current').setData({
+                        type: 'FeatureCollection',
+                        features: [{
+                            type: 'Feature',
+                            geometry: { type: 'Point', coordinates: [pos.lng, pos.lat] }
+                        }]
+                    });
+                }
+                
+                if (miniMap.getSource('fov')) {
+                    const fovDegrees = 90;
+                    const radius = 0.0002;
+                    const bearing = pov.bearing;
+                    
+                    const wedge = createFOVWedge(pos.lng, pos.lat, bearing, fovDegrees, radius);
+                    
+                    miniMap.getSource('fov').setData({
+                        type: 'FeatureCollection',
+                        features: [{
+                            type: 'Feature',
+                            geometry: {
+                                type: 'Polygon',
+                                coordinates: [wedge]
+                            }
+                        }]
+                    });
+                }
+                
+                updateArcGISOverlay(pov.bearing);
+            } catch (err) {
+                console.error('Error updating mini map:', err);
+            }
+        }
+
+        function updateArcGISOverlay(bearing) {
+            if (!fovOverlayVisible) return;
+            
+            const fovDegrees = 90;
+            const path = createFOVWedgeSVG(50, 50, bearing, fovDegrees, 40);
+            document.getElementById('fov-wedge-path').setAttribute('d', path);
+        }
+
+        function createFOVWedgeSVG(cx, cy, bearing, fovDegrees, radius) {
+            const halfFOV = fovDegrees / 2;
+            const numPoints = 20;
+            
+            let path = `M ${cx} ${cy}`;
+            
+            for (let i = 0; i <= numPoints; i++) {
+                const angle = bearing - halfFOV + (fovDegrees * i / numPoints);
+                const angleRad = (angle - 90) * Math.PI / 180;
+                
+                const x = cx + radius * Math.cos(angleRad);
+                const y = cy + radius * Math.sin(angleRad);
+                
+                path += ` L ${x} ${y}`;
+            }
+            
+            path += ' Z';
+            return path;
+        }
+
+        function createFOVWedge(lng, lat, bearing, fovDegrees, radius) {
+            const points = [[lng, lat]];
+            const halfFOV = fovDegrees / 2;
+            const numPoints = 20;
+            
+            for (let i = 0; i <= numPoints; i++) {
+                const angle = bearing - halfFOV + (fovDegrees * i / numPoints);
+                const angleRad = angle * Math.PI / 180;
+                
+                const dx = radius * Math.sin(angleRad);
+                const dy = radius * Math.cos(angleRad);
+                
+                points.push([lng + dx, lat + dy]);
+            }
+            
+            points.push([lng, lat]);
+            return points;
+        }
+
+        viewer.on('load', () => {
+            document.getElementById('loading').style.display = 'none';
+            updateMiniMapPosition();
+        });
+        viewer.on('image', updateMiniMapPosition);
+        viewer.on('position', updateMiniMapPosition);
+        viewer.on('pov', updateMiniMapPosition);
+
+        document.getElementById('mapillary-link-btn').addEventListener('click', () => {
+            window.open('https://www.mapillary.com/app/user/vukmercd23?lat=30.138492112426093&lng=-91.95221806850299&z=12.85546044226375&dateFrom=2025-10-01&username%5B%5D=vukmercd23&dateTo=2025-10-15&pKey=1347465910083369', '_blank');
+        });
+
+        document.getElementById('reload-minimap-btn').addEventListener('click', () => {
+            const btn = document.getElementById('reload-minimap-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Loading...';
+            
+            imageData = [];
+            if (miniMap.getSource('images')) {
+                miniMap.getSource('images').setData({
+                    type: 'FeatureCollection',
+                    features: []
+                });
+            }
+            
+            fetchUserImages().then(() => {
+                btn.disabled = false;
+                btn.textContent = '🔄 Reload';
+            }).catch(() => {
+                btn.disabled = false;
+                btn.textContent = '🔄 Reload';
+            });
+        });
+
+        document.getElementById('sync-btn').addEventListener('click', async () => {
+            try {
+                const pos = await viewer.getPosition();
+                const arcgisZoom = 18;
+                
+                const iframe = document.getElementById('arcgis-map');
+                const baseUrl = 'https://timmons-group.maps.arcgis.com/apps/mapviewer/index.html';
+                const newUrl = `${baseUrl}?webmap=9f2145c8c3674b9d864dd7e0d3477cf3&center=${pos.lng},${pos.lat}&level=${arcgisZoom}`;
+                iframe.src = newUrl;
+                
+                const btn = document.getElementById('sync-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Synced!';
+                btn.style.background = '#34A853';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#4285F4';
+                }, 2000);
+            } catch (err) {
+                console.error('Error syncing to ArcGIS:', err);
+                alert('Could not sync position. Please try again.');
+            }
+        });
+
+        document.getElementById('edit-btn').addEventListener('click', async () => {
+            try {
+                const pos = await viewer.getPosition();
+                const arcgisZoom = 18;
+                
+                const baseUrl = 'https://timmons-group.maps.arcgis.com/apps/webeditor/index.html';
+                const editorUrl = `${baseUrl}?webmap=9f2145c8c3674b9d864dd7e0d3477cf3&center=${pos.lng},${pos.lat}&level=${arcgisZoom}`;
+                window.open(editorUrl, '_blank');
+            } catch (err) {
+                console.error('Error opening web editor:', err);
+                alert('Could not get current position. Please try again.');
+            }
+        });
+
+        document.getElementById('toggle-fov-btn').addEventListener('click', () => {
+            fovOverlayVisible = !fovOverlayVisible;
+            const overlay = document.getElementById('arcgis-overlay');
+            const btn = document.getElementById('toggle-fov-btn');
+            
+            if (fovOverlayVisible) {
+                overlay.classList.add('visible');
+                btn.classList.add('active');
+                btn.textContent = 'Hide FOV';
+                updateMiniMapPosition();
+            } else {
+                overlay.classList.remove('visible');
+                btn.classList.remove('active');
+                btn.textContent = 'Show FOV';
+            }
+        });
+
+        // Toggle mini map expansion
+        document.getElementById('expand-minimap-btn').addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent event bubbling
+            const miniMapElement = document.getElementById('mini-map');
+            const expandBtn = document.getElementById('expand-minimap-btn');
+            
+            miniMapElement.classList.toggle('expanded');
+            
+            // Change icon based on state
+            if (miniMapElement.classList.contains('expanded')) {
+                expandBtn.textContent = '⛶'; // Could also use '✕' or '◱'
+                expandBtn.title = 'Collapse Map';
+            } else {
+                expandBtn.textContent = '⛶';
+                expandBtn.title = 'Expand Map';
+            }
+            
+            // Resize the map after transition completes
+            setTimeout(() => {
+                miniMap.resize();
+            }, 300);
+        });
+
+        fetchUserImages();
+    </script>
+</body>
+</html>

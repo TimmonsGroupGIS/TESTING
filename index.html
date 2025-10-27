@@ -408,9 +408,9 @@
                         if (!img.is_pano) {
                             return false;
                         }
-                        let capturedTime = typeof img.captured_at === 'number' ? 
-                            img.captured_at : Date.parse(img.captured_at);
-                        return capturedTime >= startTime && capturedTime < endTime;
+                        //let capturedTime = typeof img.captured_at === 'number' ? 
+                            //img.captured_at : Date.parse(img.captured_at);
+                        //return capturedTime >= startTime && capturedTime < endTime;
                     });
                     
                     console.log(`Filtered to ${filtered.length} images in date range`);
